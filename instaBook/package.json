@@ -1,0 +1,15 @@
+{
+  "name": "instabook",
+  "version": "1.0.0",
+  "main": "signupLogin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.2"
+  }
+}

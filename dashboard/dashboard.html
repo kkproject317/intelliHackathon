@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="dashboard.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body ng-app="myApp">
+    <div ng-controller="myContent">
+    <!-- sidebar -->
+    <div class="sidenav">
+        <br><br>
+        <label><span><img src="cloudCircleWhite.svg"></span>Cloud Guard</label>
+      <a href="#profile" ng-click="home()" ng-class="{'active': showHome}">Home<hr ng-if="showHome"></a>
+      <a href="#profile" ng-click="openLoginRecords()" ng-class="{'active': showLoginRecords}">Login Records<hr ng-if="showLoginRecords"></a>
+      <a href="#profile" ng-click="analytic()" ng-class="{'active': showAnalytics}">Analytics<hr ng-if="showAnalytics"></a>
+      <a href="#profile" ng-click="geoMap()" ng-class="{'active': showGeoMap}">Geo Map<hr ng-if="showGeoMap"></a>
+      <a href="#profile" ng-click="userRiskScoring()" ng-class="{'active': showUserRiskScoring}">User Risk Scoring<hr ng-if="showUserRiskScoring"></a>
+      <a href="#profile" ng-click="deviceAnalysis()" ng-class="{'active': showDeviceAnalysis}">Device Analysis<hr ng-if="showDeviceAnalysis"></a>
+    
+      <a href="#profile" ng-click="securityPolices()" ng-class="{'active': showSecurityPolicies}">Security Policies<hr ng-if="showSecurityPolicies"></a>
+
+    </div>
+
+    <!-- mainContent -->
+    <div class="main-content" >
+        <select ng-if="!readOnlyCompany" ng-model="selectedCompany" ng-change="getLoginRecords(selectedCompany)" class="filterCompany">
+        <option value="INSTABOOK">INSTABOOK</option>
+        <option value="FACEGRAM">FACEGRAM</option>
+      </select>
+      <div class="filterCompany" ng-if="readOnlyCompany" style="pointer-events:none;opacity:0.9;">{{selectedCompany}}</div>
+        <!-- home -->
+        <div ng-if="showHome" class="home-dashboard">
+            <div class="dashboard-header">
+        <h1>Dashboard Overview</h1>
+        <p>Monitor your system activity, user behavior, and security insights</p>
+    </div>
+
+    <div class="tiles-grid">
+        <!-- Login Records Tile -->
+        <div class="dashboard-tile login-records" ng-click="openLoginRecords()">
+            <div class="tile-header">
+                <div class="tile-icon">📊</div>
+                <div>
+                    <div class="tile-title">Login Records</div>
+                    <div class="tile-subtitle">User authentication activity</div>
+                </div>
+            </div>
+            <div class="tile-preview">
+                <div class="preview-table">
+                    <div class="table-row" ng-repeat="rec in loginTilePreview">
+                        <span>{{rec.user || rec.email}}</span>
+                        <span class="status" ng-class="{ 'success': rec.login_success, 'warning': !rec.login_success }">{{rec.login_success ? 'Success' : 'Failed'}}</span>
+                        <span>{{rec.timestamp | date:'h:mm a'}}</span>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat">
+                        <div class="stat-value">{{loginTile.total || 0}}</div>
+                        <div class="stat-label">Today's Logins</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">{{loginTile.failed || 0}}</div>
+                        <div class="stat-label">Failed Attempts</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">{{loginTile.blocked || 0}}</div>
+                        <div class="stat-label">Blocked IPs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tile -->
+        <div class="dashboard-tile analytics" ng-click="analytic()">
+            <div class="tile-header" style="margin-bottom: 50px;">
+                <div class="tile-icon">📈</div>
+                <div>
+                    <div class="tile-title">Analytics</div>
+                    <div class="tile-subtitle">Performance metrics & insights</div>
+                </div>
+            </div>
+            <div class="tile-preview">
+                <div class="chart-preview">
+                    <div class="bar" style="height: 60%"></div>
+                    <div class="bar" style="height: 80%"></div>
+                    <div class="bar" style="height: 45%"></div>
+                    <div class="bar" style="height: 95%"></div>
+                    <div class="bar" style="height: 70%"></div>
+                    <div class="bar" style="height: 85%"></div>
+                    <div class="bar" style="height: 55%"></div>
+                    <div class="bar" style="height: 75%"></div>
+                </div>
+                
+            </div>
+        </div>
+        <!-- Geo Map Tile -->
+        <div class="dashboard-tile geo-map" ng-click="geoMap()">
+            <div class="tile-header">
+                <div class="tile-icon">🌍</div>
+                <div>
+                    <div class="tile-title">Geo Map</div>
+                    <div class="tile-subtitle">Global activity & anomaly detection</div>
+                </div>
+            </div>
+            <div class="tile-preview">
+                <div id="geoMapPreview"></div>
+    <div class="geoMapScalePreview">
+      🔴 High Risk <br>
+      🟡 Medium Risk <br>
+      🟢 Low Risk <br>
+    </div>
+            </div>
+        </div>
+        <!-- Company Records Tile -->
+        <div class="dashboard-tile company-records" ng-click="companyRecords()">
+            <div class="tile-header">
+                <div class="tile-icon">🏢</div>
+                <div>
+                    <div class="tile-title">Company Records</div>
+                    <div class="tile-subtitle">Top Riskiest Company</div>
+                </div>
+            </div>
+            <div class="tile-preview">
+                <div class="preview-table">
+      <div class="table-row">
+        <span>{{topRiskCompany.name}}</span>
+        <span class="status error">High Risk</span>
+        <span>{{topRiskCompany.riskScore}}%</span>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-value">{{topRiskCompany.riskScore}}%</div>
+        <div class="stat-label">Risk Score</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">{{topRiskCompany.anomalies}}</div>
+        <div class="stat-label">Anomalies</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">{{topRiskCompany.users}}</div>
+        <div class="stat-label">Users</div>
+      </div>
+    </div>
+            </div>
+        </div>
+
+        <!-- Threat Alerts Tile -->
+<div class="dashboard-tile threat-alerts" ng-click="openLoginRecords()">
+  <div class="tile-header">
+    <div class="tile-icon">🚨</div>
+    <div>
+      <div class="tile-title">Threat Alerts</div>
+      <div class="tile-subtitle">Active Incidents</div>
+    </div>
+  </div>
+  <div class="tile-preview">
+    <div class="table-row">
+      <span>🔴 Critical</span>
+      <span class="status error">{{alerts.critical}}</span>
+    </div>
+    <div class="table-row">
+      <span>🟠 High</span>
+      <span class="status warning">{{alerts.high}}</span>
+    </div>
+  </div>
+</div>
+
+<!-- User Risk Scoring Tile -->
+<div class="dashboard-tile user-risk" ng-click="userRiskScoring()">
+  <div class="tile-header">
+    <div class="tile-icon">👤</div>
+    <div>
+      <div class="tile-title">User Risk Scoring</div>
+      <div class="tile-subtitle">Risk Breakdown</div>
+    </div>
+  </div>
+  <div class="tile-preview">
+    <div class="table-row"><span>🔴 High</span><span>{{userRisk.high}}</span></div>
+    <div class="table-row"><span>🟠 Medium</span><span>{{userRisk.medium}}</span></div>
+    <div class="table-row"><span>🟢 Low</span><span>{{userRisk.low}}</span></div>
+  </div>
+</div>
+
+<!-- Device Fingerprinting Tile -->
+<div class="dashboard-tile device-fp" ng-click="deviceAnalysis()">
+  <div class="tile-header">
+    <div class="tile-icon">💻</div>
+    <div>
+      <div class="tile-title">Device Fingerprinting</div>
+      <div class="tile-subtitle">Devices Overview</div>
+    </div>
+  </div>
+  <div class="tile-preview">
+    <div class="table-row">
+      <span>Total Devices</span><span>{{devices.total}}</span>
+    </div>
+    <div class="table-row">
+      <span>New This Week</span><span>{{devices.new}}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Real-time Activity Feed Tile -->
+<div class="dashboard-tile activity-feed" ng-click="openLoginRecords()">
+  <div class="tile-header">
+    <div class="tile-icon">📡</div>
+    <div>
+      <div class="tile-title">Activity Feed</div>
+      <div class="tile-subtitle">Recent Events</div>
+    </div>
+  </div>
+  <div class="tile-preview feed-preview">
+    <div ng-repeat="event in recentEvents | limitTo:3" class="feed-row">
+      <span ng-class="{'status success': event.success, 'status error': !event.success}">
+        {{event.message}}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Security Report / Compliance Tile -->
+<div class="dashboard-tile compliance" ng-click="securityReport()">
+  <div class="tile-header">
+    <div class="tile-icon">🛡️</div>
+    <div>
+      <div class="tile-title">Security Report</div>
+      <div class="tile-subtitle">Compliance Overview</div>
+    </div>
+  </div>
+  <div class="tile-preview">
+    <div class="table-row">
+      <span>Compliance</span>
+      <span class="status success">{{compliance.percent}}%</span>
+    </div>
+    <div class="table-row">
+      <span>Policies Passed</span>
+      <span>{{compliance.passed}} / {{compliance.total}}</span>
+    </div>
+  </div>
+</div>
+
+
+    </div>
+        </div>  
+        <!-- Login Records -->
+        <div ng-if="showLoginRecords">
+            
+      
+
+      <!-- btns -->
+      <div class="customizeBtns">
+        <button ng-click="filterDiv()"><img src="filter.svg"></button>
+      </div>
+
+      <!-- table -->
+      <div class="tablebg">
+        <div class="table-container">
+        <table class="expenseTable" >
+          <tr>
+            <th>Company</th>
+            <th>User Id</th>
+            <th>Date & Time</th>
+            <th>Location</th>
+            <th>Device Type</th>
+            <th>Login Result</th>
+            <th>Flag</th>
+            <th>Confidence score</th>
+            <th>Reason</th>
+            <th>Action</th>
+          </tr>
+          <tr ng-repeat="loginRec in loginRecords">
+            <td>{{ loginRec.company }}</td> 
+            <td>{{ loginRec.user}}</td>
+            <td>{{ loginRec.timestamp | date:'dd-MM-yyyy  h:mm a' }}</td>
+            <td>{{loginRec.city}} ,{{loginRec.country}}</td>
+            <td>{{ loginRec.device_type}}</td>
+            <td>{{loginRec.login_success}}</td>
+            <td>{{loginRec.prediction}}</td>
+            <td ng-style="{
+    'color': loginRec.risk_score < 30 ? 'green' : 
+             (loginRec.risk_score < 60 ? 'goldenrod' : 
+             (loginRec.risk_score < 80 ? 'red' : 'deeppink'))
+}">
+  {{loginRec.risk_score}}
+</td>
+            <td>{{loginRec.reason.length === 0 ? '-' : loginRec.reason.join(', ') }}</td>
+           <td>{{ 
+              loginRec.risk_score < 30 ? 'No Action' :
+              (loginRec.risk_score >= 30 && loginRec.risk_score < 60) ? 'Supervise' :
+              (loginRec.risk_score >= 60 && loginRec.risk_score < 80) ? 'Go for MFA' :
+              (loginRec.risk_score >= 80 && loginRec.risk_score <= 100) ? 'Block' :
+              '-' 
+            }}
+          </td>
+          </tr>
+        </table>
+      </div>
+      </div>
+
+      <!-- filterDiv -->
+      <div class="filterDiv" ng-class="{'slide-in': filterDivVar, 'slide-out': !filterDivVar}">
+        <button class="closeFilter" ng-click="closeFilter()"><img src="close.svg"></button>
+        <p>User Id</p>
+        <select>
+                <option disabled selected value="">Select User</option>
+                <option ng-repeat="member in members" >{{member.memberName}}</option>
+        </select>
+        <p>Location</p>
+        <select  ng-model="newExpense.expenseType" required>
+                <option disabled selected value="">Select Location</option>
+                <option ng-repeat="eT in expenseTypes">{{eT.expenseTypes}}</option>
+              </select>
+        <p>From Date<br>
+          <input type="date">
+        </p>
+        <p>To Date<br>
+          <input type="date">
+        </p>
+        <p>Device Type</p>
+         <select ng-model="newExpense.paymentMethod" required>
+                <option disabled selected value="">Select Device Type</option>
+                <option ng-repeat="pM in paymentMethods">{{pM.paymentType}}</option>
+              </select>
+        <p>Flag</p>
+         <select ng-model="newExpense.paymentMethod" required>
+                <option disabled selected value="">Select Flag</option>
+                <option ng-repeat="pM in paymentMethods">{{pM.paymentType}}</option>
+              </select>
+        <p>Confidence Score</p>
+         <select ng-model="newExpense.paymentMethod" required>
+                <option disabled selected value="">Select Confidence Score</option>
+                <option ng-repeat="pM in paymentMethods">{{pM.paymentType}}</option>
+              </select>
+        <p>Login Result</p>
+         <select ng-model="newExpense.paymentMethod" required>
+                <option disabled selected value="">Select Login Result</option>
+                <option ng-repeat="pM in paymentMethods">{{pM.paymentType}}</option>
+              </select>
+        <p>Sort By</p>
+        <select>
+          <option>Date & Time</option>
+          <option>Flagged</option>
+          <option>Confidence Score</option>
+          <option>Location</option>
+          <option>Device type</option>
+        </select>
+      </div>
+
+     
+
+        </div>
+        <!-- Analytics -->
+        <div ng-if="showAnalytics">
+          <div class="page" style="padding:20px;color:#fff;font-family:'Montserrat',sans-serif;">
+            <h1>Analytics</h1>
+            <p class="page-subtitle">Charts derived from login records</p>
+            <div class="analysis-grid">
+              <div class="analysis-section">
+                <h2>Login Results</h2>
+                <canvas id="loginResultsChart" style="width:100%;height:260px"></canvas>
+              </div>
+              <div class="analysis-section">
+                <h2>Company Avg Risk</h2>
+                <canvas id="companyRiskChart" style="width:100%;height:260px"></canvas>
+              </div>
+              <div class="analysis-section">
+                <h2>User Risk Breakdown</h2>
+                <canvas id="userRiskChart" style="width:100%;height:260px"></canvas>
+              </div>
+              <div class="analysis-section">
+                <h2>Device Distribution</h2>
+                <canvas id="deviceChart" style="width:100%;height:260px"></canvas>
+              </div>
+              <div class="analysis-section">
+                <h2>Impossible Travel (approx)</h2>
+                <canvas id="travelChart" style="width:100%;height:260px"></canvas>
+              </div>
+              
+              <div class="analysis-section">
+                <h2>Login Activity by Hour</h2>
+                <canvas id="hourlyActivityChart" style="width:100%;height:260px"></canvas>
+              </div>
+              <div class="analysis-section">
+                <h2>OS Breakdown</h2>
+                <canvas id="osBreakdownChart" style="width:100%;height:260px"></canvas>
+              </div>
+              <div class="analysis-section">
+                <h2>Browser Breakdown</h2>
+                <canvas id="browserBreakdownChart" style="width:100%;height:260px"></canvas>
+              </div>
+              <div class="analysis-section">
+                <h2>Connection Type</h2>
+                <canvas id="connectionTypeChart" style="width:100%;height:260px"></canvas>
+              </div>
+              <div class="analysis-section">
+                <h2>ISP / ASN Analysis</h2>
+                <canvas id="ispAnalysisChart" style="width:100%;height:260px"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- geo Map -->
+        <div ng-if="showGeoMap">
+           <div id="geoMap"></div>
+            <div class="geoMapScale">
+                🔴 High Risk <br>
+                🟡 Medium Risk <br>
+                🟢 Low Risk <br>
+            </div>
+
+        </div>
+
+        <!-- User risk Scoring -->
+        <div ng-if="showUserRiskScoring">
+            <div class="page user-risk-page">
+  <h1>User Risk Scoring</h1>
+  <p class="page-subtitle">AI-powered behavioral analysis and risk assessment</p>
+
+  <!-- Risk Summary Cards -->
+  <div class="risk-summary-grid">
+    <div class="risk-card critical">
+      <div class="risk-value">{{userRiskSummary.critical}}</div>
+      <div class="risk-label">Critical Risk</div>
+    </div>
+    <div class="risk-card high">
+      <div class="risk-value">{{userRiskSummary.high}}</div>
+      <div class="risk-label">High Risk</div>
+    </div>
+    <div class="risk-card medium">
+      <div class="risk-value">{{userRiskSummary.medium}}</div>
+      <div class="risk-label">Medium Risk</div>
+    </div>
+    <div class="risk-card low">
+      <div class="risk-value">{{userRiskSummary.low}}</div>
+      <div class="risk-label">Low Risk</div>
+    </div>
+  </div>
+
+  <!-- User Risk Analysis List -->
+  <h2>User Risk Analysis</h2>
+  
+
+  <div class="user-risk-list">
+    <div class="user-risk-card" ng-repeat="user in riskyUsers">
+      <div class="user-info">
+        <div class="user-email">{{user.email}}</div>
+        <div class="user-meta">Last activity: {{user.lastActivity}}</div>
+        <div class="user-tags">
+          <span class="tag" ng-repeat="tag in user.tags">{{tag}}</span>
+        </div>
+      </div>
+      <div class="user-risk-score" ng-class="user.riskLevel">
+        {{user.riskScore}}% Risk
+      </div>
+    </div>
+  </div>
+</div>
+        </div>
+
+        <!--  Device Analysis -->
+        <div ng-if="showDeviceAnalysis">
+            <div class="page device-analysis">
+  <h1>Device Analysis</h1>
+  <p class="page-subtitle">Device fingerprinting and behavioral analysis</p>
+
+  <div class="analysis-grid">
+    <!-- Device Distribution -->
+    <div class="analysis-section">
+      <h2>Device Distribution</h2>
+      <div class="distribution-list">
+        <div class="distribution-item" ng-repeat="d in deviceDistribution">
+          <span>{{d.type}}</span>
+          <div class="bar">
+            <div class="fill" ng-style="{'width': d.value + '%'}"></div>
+          </div>
+          <span class="value">{{d.value}}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suspicious Devices -->
+    <div class="analysis-section">
+      <h2>Suspicious Devices</h2>
+      <div class="device-list">
+        <div class="device-card" ng-repeat="s in suspiciousDevices">
+          <div class="device-info">
+            <div class="device-name">{{s.name}}</div>
+            <div class="device-details">{{s.user}} • {{s.location}}</div>
+          </div>
+          <div class="risk-badge {{s.risk | lowercase}}">{{s.risk}}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Device Stats -->
+    <div class="analysis-section">
+      <h2>Device Stats</h2>
+      <div class="stats-grid">
+        <div class="stat-card trusted"> {{deviceStats.trusted}} <span>Trusted</span></div>
+        <div class="stat-card new"> {{deviceStats.newToday}} <span>New Today</span></div>
+        <div class="stat-card blocked"> {{deviceStats.blocked}} <span>Blocked</span></div>
+        <div class="stat-card flagged"> {{deviceStats.flagged}} <span>Flagged</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+        </div>
+
+
+
+
+
+
+        <!-- settings -->
+        <div ng-if="showSecurityPolicies">
+            <div class="page security-policies">
+  <h1>Security Policies</h1>
+  <p class="page-subtitle">Configure detection rules and security thresholds</p>
+
+  <div class="policies-grid">
+    <!-- Login Policies -->
+    <div class="policy-section">
+      <h2>Login Policies</h2>
+      <div class="policy-list">
+        <div class="policy-card" ng-repeat="policy in loginPolicies">
+          <div class="policy-info">
+            <div class="policy-name">{{policy.name}}</div>
+            <div class="policy-current">Current: {{policy.current}}</div>
+          </div>
+          <div class="policy-status">{{policy.status}}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Thresholds -->
+    <div class="policy-section">
+      <h2>Risk Thresholds</h2>
+      <div class="policy-list">
+        <div class="policy-card" ng-repeat="threshold in riskThresholds">
+          <div class="policy-info">
+            <div class="policy-name">{{threshold.name}}</div>
+            <div class="policy-action">{{threshold.action}}</div>
+          </div>
+          <div class="policy-value">{{threshold.value}}%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+        </div>
+    </div>
+    </div>
+     <script src="dashboard.js"></script>
+</body>
+</html>
