@@ -1,2 +1,0 @@
-# intellihackathon
-Login Anomalies 

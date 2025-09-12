@@ -238,13 +238,14 @@ app.controller("myContent",function($scope,$http,$timeout,$window){
 
     $scope.getLoginRecords = function(companyParam) {
     const selectedCompany = companyParam || $scope.selectedCompany || 'INSTABOOK'; // default company
-        return $http.get('http://127.0.0.1:8000/loginRecords/getAllLoginRecords/' + selectedCompany)
+        return $http.get('http://127.0.0.1:8000/getAllLoginRecords/' + selectedCompany)
         .then(function(response) {
             $scope.loginRecords = response.data;
             $scope.loginData = response.data;
             updateRiskMetrics($scope.loginRecords)
             if ($scope.showGeoMap) { $timeout(function(){ $scope.geoMap(); }, 0); }
             if ($scope.showAnalytics) { $timeout(function(){ try { renderCharts($scope.loginRecords); } catch(e) {} }, 0); }
+            console.log(response.data)
         })
         .catch(function(error) {
             console.error(error);

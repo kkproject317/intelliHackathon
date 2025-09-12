@@ -286,15 +286,17 @@
             <td>{{loginRec.city}} ,{{loginRec.country}}</td>
             <td>{{ loginRec.device_type}}</td>
             <td>{{loginRec.login_success}}</td>
-            <td>{{loginRec.prediction}}</td>
-            <td ng-style="{
+            <td>{{loginRec.prediction == 1 ? 'anomalous' : 'normal'}}</td>
+            <td ng-style="{ 
     'color': loginRec.risk_score < 30 ? 'green' : 
              (loginRec.risk_score < 60 ? 'goldenrod' : 
              (loginRec.risk_score < 80 ? 'red' : 'deeppink'))
 }">
-  {{loginRec.risk_score}}
+{{ loginRec.risk_score != null ? (loginRec.risk_score | number:2) : '-' }}
 </td>
-            <td>{{loginRec.reason.length === 0 ? '-' : loginRec.reason.join(', ') }}</td>
+<td>
+  {{ loginRec.reason}}
+</td>
            <td>{{ 
               loginRec.risk_score < 30 ? 'No Action' :
               (loginRec.risk_score >= 30 && loginRec.risk_score < 60) ? 'Supervise' :
